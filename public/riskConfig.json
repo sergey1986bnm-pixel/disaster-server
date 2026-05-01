@@ -1,0 +1,14 @@
+{
+  "weights": {
+    "fireNear": 6,
+    "fireFar": 3,
+    "quakeNear": 6,
+    "quakeFar": 3,
+    "tempHigh": 3,
+    "tempLow": 2
+  },
+  "thresholds": {
+    "danger": 6,
+    "warning": 3
+  }
+}

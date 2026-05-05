@@ -270,10 +270,36 @@ html, body { margin: 0; height: 100%; }
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
 "use strict";
 
-// весь твой код (ничего внутри не трогаешь)
+document.addEventListener("DOMContentLoaded", () => {
+
+const searchInput = document.getElementById("search");
+const suggestionsBox = document.getElementById("suggestions");
+
+// ================================================================
+//  SECTION 1 — I18N
+// ================================================================
+
+let currentLang = "en";
+
+const translations = {
+  en: { me: "Me" },
+  fr: { me: "Moi" },
+  zh: { me: "我" }
+};
+
+// 👇 ДАЛЬШЕ ВСТАВЬ ВЕСЬ СВОЙ ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ 👇
+
+// например:
+// function init() { ... }
+// loadResorts();
+// loadFires();
+// и т.д.
+
+// ================================================================
+//  В КОНЦЕ ОБЯЗАТЕЛЬНО:
+// ================================================================
 
 init();
 setInterval(autoRefreshData, 3 * 60 * 60 * 1000);
@@ -928,6 +954,9 @@ async function loadCountries() {
     console.error("Countries load error:", err);
   }
 }
+
+const searchInput = document.getElementById("search");
+const suggestionsBox = document.getElementById("suggestions");
 
 searchInput.addEventListener("input", () => {
   const v = searchInput.value.toLowerCase().trim();

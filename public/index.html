@@ -930,16 +930,21 @@ searchInput.addEventListener("input", () => {
 
   if (!v) return;
 
-  const results = resorts
-    .filter(r => r.name && r.name.toLowerCase().includes(v))
-    .sort((a, b) => {
-      const aStarts = a.name.toLowerCase().startsWith(v);
-      const bStarts = b.name.toLowerCase().startsWith(v);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-      return a.name.localeCompare(b.name);
-    })
-    .slice(0, 5);
+ const results = resorts
+  .filter(r =>
+    r &&
+    typeof r === "object" &&
+    typeof r.name === "string" &&
+    r.name.toLowerCase().includes(v)
+  )
+  .sort((a, b) => {
+    const aStarts = a.name.toLowerCase().startsWith(v);
+    const bStarts = b.name.toLowerCase().startsWith(v);
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    return a.name.localeCompare(b.name);
+  })
+  .slice(0, 5);
 
   results.forEach(r => {
     const div = document.createElement("div");

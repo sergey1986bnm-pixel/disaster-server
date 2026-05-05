@@ -1,203 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
 <meta charset="utf-8" />
 <title>Disaster Map</title>
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
 <style>
-#infoPanel {
+/* ============================================================
+   PANELS
+   ============================================================ */
+.slide-panel {
   position: fixed;
   top: 0;
   right: -350px;
-
-  width: 320px;
-  height: 100%;
-
-  background: white;
-  z-index: 10000;
-
-  box-shadow: -4px 0 15px rgba(0,0,0,0.3);
-  padding: 15px;
-
-  transition: right 0.3s ease;
-}
-
-#infoPanel.open {
-  right: 0;
-}
-
-.panel-content {
-  font-size: 14px;
-  line-height: 1.5;
-}
-#settingsPanel {
-  position: fixed;
-  top: 0;
-  right: -320px;
-
   width: 300px;
   height: 100%;
-
   background: white;
   z-index: 10000;
-
   box-shadow: -4px 0 15px rgba(0,0,0,0.3);
   padding: 15px;
-
   transition: right 0.3s ease;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
-
-#settingsPanel.open {
-  right: 0;
-}
-
-#epidemicsPanel {
-  position: fixed;
-  top: 0;
-  right: -320px;
-
-  width: 300px;
-  height: 100%;
-
-  background: white;
-  z-index: 10000;
-
-  box-shadow: -4px 0 15px rgba(0,0,0,0.3);
-  padding: 15px;
-
-  transition: right 0.3s ease;
-}
-
-#epidemicsPanel.open {
-  right: 0;
-}
+.slide-panel.wide { width: 320px; right: -370px; }
+.slide-panel.open { right: 0; }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
 }
+.panel-close { cursor: pointer; font-size: 16px; }
+.panel-content { font-size: 14px; line-height: 1.5; }
 
-#closePanel {
-  cursor: pointer;
-}
-#closeInfo {
-  cursor: pointer;
-}
-#notifyPanel {
-  position: fixed;
-  top: 0;
-  right: -320px;
-
-  width: 300px;
-  height: 100%;
-
-  background: white;
-  z-index: 10000;
-
-  box-shadow: -4px 0 15px rgba(0,0,0,0.3);
-  padding: 15px;
-
-  transition: right 0.3s ease;
-}
-
-#notifyPanel.open {
-  right: 0;
-}
-
-#closeNotify {
-  cursor: pointer;
-}
-
+/* ============================================================
+   SIDEBAR BUTTONS
+   ============================================================ */
 #rightSidebar {
   position: fixed;
   top: 120px;
   right: 15px;
-
   display: flex;
   flex-direction: column;
   gap: 10px;
-
   z-index: 9999;
 }
-
 .side-btn {
   width: 45px;
   height: 45px;
-
   border: none;
   border-radius: 12px;
-
   background: #1f2937;
   color: white;
   font-size: 18px;
-
   cursor: pointer;
-  transition: 0.2s;
-
+  transition: background 0.2s;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
+.side-btn:hover { background: #374151; }
 
-.side-btn:hover {
-  background: #374151;
-}
-
-html, body {
-  margin: 0;
-  height: 100%;
-}
-
+/* ============================================================
+   MAP & LAYOUT
+   ============================================================ */
+html, body { margin: 0; height: 100%; }
 #map {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   z-index: 1;
 }
 
+/* ============================================================
+   TOPBAR
+   ============================================================ */
 #topbar {
   position: fixed;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-
   background: white;
   padding: 10px;
   border-radius: 12px;
-
   display: flex;
   gap: 10px;
   align-items: center;
-
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
+/* ============================================================
+   SEARCH SUGGESTIONS
+   ============================================================ */
 #suggestions {
   position: fixed;
   top: 60px;
   left: 50%;
   transform: translateX(-50%);
   width: 220px;
-
   background: white;
   border-radius: 8px;
   z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
+.suggestion { padding: 8px; cursor: pointer; }
+.suggestion:hover { background: #eee; }
 
-.suggestion {
-  padding: 8px;
-  cursor: pointer;
-}
-
-.suggestion:hover {
-  background: #eee;
-}
+/* ============================================================
+   LEGEND
+   ============================================================ */
 #legend {
   position: absolute;
   bottom: 20px;
@@ -209,121 +122,96 @@ html, body {
   box-shadow: 0 0 10px rgba(0,0,0,0.2);
   z-index: 1000;
 }
-
-#legend div {
-  margin: 4px 0;
-}
-
+#legend div { margin: 4px 0; }
 </style>
 </head>
-
 <body>
 
+<!-- ============================================================
+     TOPBAR
+     ============================================================ -->
 <div id="topbar">
- <input id="search" placeholder="Search..." />
-<button id="btnMe" onclick="locateUser()">Me</button>
-<button id="btnRefresh" onclick="refreshMap()">Refresh</button>
+  <input id="search" placeholder="Search..." />
+  <button id="btnMe" onclick="locateUser()">Me</button>
+  <button id="btnRefresh" onclick="refreshMap()">Refresh</button>
   <select id="langSelect" onchange="setLanguage(this.value)">
-  <option value="en">EN</option>
-  <option value="fr">FR</option>
-  <option value="zh">中文</option>
-</select>
-
- <label>
-  <input type="checkbox" checked onchange="toggleFires(this.checked)">
-  🔥
-</label>
-
-<label>
-  <input type="checkbox" checked onchange="toggleQuakes(this.checked)">
-  🌍
-</label>
+    <option value="en">EN</option>
+    <option value="fr">FR</option>
+    <option value="zh">中文</option>
+  </select>
+  <label><input type="checkbox" checked onchange="toggleFires(this.checked)"> 🔥</label>
+  <label><input type="checkbox" checked onchange="toggleQuakes(this.checked)"> 🌍</label>
 </div>
 
 <div id="suggestions"></div>
+
+<!-- ============================================================
+     BRAND BADGE
+     ============================================================ -->
 <div style="
-  position: fixed;
-  top: 0px;
-  left: 80px;
-  z-index: 9999;
-  background: white;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-family: Arial;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  position:fixed; top:0; left:80px; z-index:9999;
+  background:white; padding:10px 14px; border-radius:12px;
+  font-family:Arial; box-shadow:0 2px 10px rgba(0,0,0,0.2);
 ">
-  <div style="font-weight: bold; font-size: 16px;">
-    🌍 Travel Risk Map
-  </div>
-  <div style="font-size: 12px; color: gray;">
-    See fires and earthquakes near resorts
-  </div>
-  </div>
-  
-  <div id="rightSidebar">
-  <button class="side-btn">ℹ️</button>
-  <button class="side-btn">🔔</button>
-  <button class="side-btn" id="epidemicsBtn">🦠</button>
-  <button class="side-btn">⚙️</button>
+  <div style="font-weight:bold; font-size:16px;">🌍 Travel Risk Map</div>
+  <div style="font-size:12px; color:gray;">See fires and earthquakes near resorts</div>
 </div>
 
-<div id="infoPanel">
+<!-- ============================================================
+     RIGHT SIDEBAR BUTTONS
+     ============================================================ -->
+<div id="rightSidebar">
+  <button class="side-btn" id="btnInfo">ℹ️</button>
+  <button class="side-btn" id="btnNotify">🔔</button>
+  <button class="side-btn" id="btnEpidemics">🦠</button>
+  <button class="side-btn" id="btnSettings">⚙️</button>
+</div>
+
+<!-- ============================================================
+     MAP
+     ============================================================ -->
+<div id="map"></div>
+<div id="legend"></div>
+
+<!-- ============================================================
+     INFO PANEL
+     ============================================================ -->
+<div id="infoPanel" class="slide-panel wide">
   <div class="panel-header">
     <span>ℹ️ About</span>
-    <span id="closeInfo">✖</span>
+    <span class="panel-close" data-closes="infoPanel">✖</span>
   </div>
-
   <div class="panel-content">
     <h3>Travel Risk Map</h3>
-    <p>
-      This map helps travelers evaluate safety of destinations worldwide.
-    </p>
-
-    <p>
-      It uses real-time data:
-    </p>
-
+    <p>This map helps travelers evaluate safety of destinations worldwide.</p>
+    <p>It uses real-time data:</p>
     <ul>
       <li>🔥 Wildfires (NASA)</li>
       <li>🌍 Earthquakes (USGS)</li>
       <li>🦠 Epidemics (WHO)</li>
     </ul>
-
-    <p>
-      The system calculates risk based on distance and environmental factors.
-    </p>
-
-    <p>
-      Click any location to see detailed analysis.
-    </p>
+    <p>The system calculates risk based on distance and environmental factors.</p>
+    <p>Click any location to see detailed analysis.</p>
   </div>
 </div>
 
-<div id="map"></div>
-<div id="legend">
-  <div><span style="color:green;">●</span> Safe</div>
-  <div><span style="color:orange;">●</span> Risk in region</div>
-  <div><span style="color:red;">●</span> Danger nearby</div>
-</div>
-<div id="epidemicsPanel">
-<div id="settingsPanel">
+<!-- ============================================================
+     SETTINGS PANEL
+     ============================================================ -->
+<div id="settingsPanel" class="slide-panel">
   <div class="panel-header">
     <span>⚙️ Settings</span>
-    <span id="closeSettings">✖</span>
+    <span class="panel-close" data-closes="settingsPanel">✖</span>
   </div>
-
   <div class="panel-content">
-
     <label style="display:flex; justify-content:space-between; margin-bottom:10px;">
       🔥 Show fires
       <input type="checkbox" checked onchange="toggleFires(this.checked)">
     </label>
-
     <label style="display:flex; justify-content:space-between; margin-bottom:10px;">
       🌍 Show earthquakes
       <input type="checkbox" checked onchange="toggleQuakes(this.checked)">
     </label>
-
     <label style="display:flex; justify-content:space-between; margin-bottom:15px;">
       🌐 Language
       <select onchange="setLanguage(this.value)">
@@ -332,264 +220,141 @@ html, body {
         <option value="zh">中文</option>
       </select>
     </label>
-
     <button onclick="refreshMap()" style="
-      width:100%;
-      padding:10px;
-      border:none;
-      border-radius:10px;
-      background:#1f2937;
-      color:white;
-    ">
-      Refresh map
-    </button>
-
+      width:100%; padding:10px; border:none;
+      border-radius:10px; background:#1f2937; color:white; cursor:pointer;
+    ">Refresh map</button>
   </div>
 </div>
+
+<!-- ============================================================
+     EPIDEMICS PANEL
+     ============================================================ -->
+<div id="epidemicsPanel" class="slide-panel">
   <div class="panel-header">
     <span>🦠 Epidemics</span>
-    <span id="closePanel">✖</span>
+    <span class="panel-close" data-closes="epidemicsPanel">✖</span>
   </div>
-
-  <input id="countryInput" placeholder="Search country..." />
+  <input id="countryInput" placeholder="Search country..." style="width:100%; box-sizing:border-box; padding:6px; margin-bottom:8px;" />
   <div id="epidemicResult"></div>
 </div>
-<div id="notifyPanel">
+
+<!-- ============================================================
+     NOTIFICATIONS PANEL
+     ============================================================ -->
+<div id="notifyPanel" class="slide-panel">
   <div class="panel-header">
     <span>🔔 Notifications</span>
-    <span id="closeNotify">✖</span>
+    <span class="panel-close" data-closes="notifyPanel">✖</span>
   </div>
-
- <div class="panel-content">
-
-  <p style="margin-bottom:10px;">
-    Get alerts when risks appear near your destination.
-  </p>
-
-  <ul style="padding-left:18px; margin-bottom:15px;">
-    <li>🔥 Wildfires nearby</li>
-    <li>🌍 Earthquakes nearby</li>
-    <li>🦠 Epidemic spikes</li>
-  </ul>
-
-  <p style="font-weight:bold; margin-bottom:15px;">
-    Stay informed before and during your trip.
-  </p>
-
-  <button disabled style="
-    width:100%;
-    padding:10px;
-    border:none;
-    border-radius:10px;
-    background:#9ca3af;
-    color:white;
-    cursor:not-allowed;
-  ">
-    Enable alerts
-  </button>
-
-  <p style="color:gray; font-size:12px; margin-top:10px; text-align:center;">
-    Coming soon
-  </p>
-
-</div>
+  <div class="panel-content">
+    <p style="margin-bottom:10px;">Get alerts when risks appear near your destination.</p>
+    <ul style="padding-left:18px; margin-bottom:15px;">
+      <li>🔥 Wildfires nearby</li>
+      <li>🌍 Earthquakes nearby</li>
+      <li>🦠 Epidemic spikes</li>
+    </ul>
+    <p style="font-weight:bold; margin-bottom:15px;">Stay informed before and during your trip.</p>
+    <button disabled style="
+      width:100%; padding:10px; border:none;
+      border-radius:10px; background:#9ca3af; color:white; cursor:not-allowed;
+    ">Enable alerts</button>
+    <p style="color:gray; font-size:12px; margin-top:10px; text-align:center;">Coming soon</p>
+  </div>
 </div>
 
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <script>
-let map = L.map('map', {
-  maxZoom: 18
-}).setView([48.5, 32], 5);
+"use strict";
 
-let riskConfig = null;
-
-function getRiskDecision(score, t) {
-
-  if (!riskConfig || !riskConfig.thresholds) {
-    return {
-      level: "safe",
-      decision: "Loading...",
-      details: "",
-      advice: ""
-    };
-  }
-
-  const riskThresholds = riskConfig.thresholds;
-
-  // 🔴 КРАСНЫЙ уровень
-  if (score >= riskThresholds.danger) {
-    return {
-      level: "danger",
-      decision: `🔴 ${t("avoid")}`,
-      details: t("highRisk"),
-      advice: `
-        ❌ ${t("changePlans")}<br>
-        ⚠️ ${t("unstable")}<br>
-        🔥 ${t("pickSafer")}
-      `
-    };
-  }
-
-  // 🟡 ЖЕЛТЫЙ уровень
-  if (score >= riskThresholds.warning) {
-    return {
-      level: "warning",
-      decision: `⚠️ ${t("caution")}`,
-      details: t("moderateRisk"),
-      advice: `
-        ⏳ ${t("monitor")}<br>
-        + ${t("tripPossible")}<br>
-        - ${t("unstable")}
-      `
-    };
-  }
-
-  // 🟢 ЗЕЛЕНЫЙ уровень
-  return {
-    level: "safe",
-    decision: `🟢 ${t("ok")}`,
-    details: t("lowRisk"),
-    advice: `
-      ✅ ${t("goodConditions")}<br>
-      + ${t("lowRisk")}
-    `
-  };
-}
+// ================================================================
+//  SECTION 1 — I18N
+// ================================================================
 
 let currentLang = "en";
 
 const translations = {
   en: {
-   me: "Me",
-  refresh: "Refresh",
-   risk: "Risk",
-  geoError: "Geolocation failed",
-  loading: "Loading...",
-  extremeHeat: "Extreme heat",
-extremeCold: "Extreme cold",
-    km: "km",
-  highRisk: "High risk",
-moderateRisk: "Moderate risk",
-lowRisk: "Low risk",
-pickSafer: "Pick safer resort",
-betterOptions: "Much safer options available",
-changePlans: "Change of plans required",
-monitor: "Monitor situation",
-tripPossible: "Trip possible",
-unstable: "Situation may change",
-goodConditions: "Good conditions",
-distanceNote: "Risk is based on distance only",
-  youAreHere: "You are here",
-    safe: "Safe",
-    warning: "Risk in region",
-    danger: "Danger nearby",
+    me: "Me", refresh: "Refresh", risk: "Risk",
+    geoError: "Geolocation failed", loading: "Loading...",
+    loadingData: "Loading data…",
+    extremeHeat: "Extreme heat", extremeCold: "Extreme cold", km: "km",
+    highRisk: "High risk", moderateRisk: "Moderate risk", lowRisk: "Low risk",
+    pickSafer: "Pick safer resort", betterOptions: "Much safer options available",
+    changePlans: "Change of plans required", monitor: "Monitor situation",
+    tripPossible: "Trip possible", unstable: "Situation may change",
+    goodConditions: "Good conditions", distanceNote: "Risk is based on distance only",
+    youAreHere: "You are here",
+    safe: "Safe", warning: "Risk in region", danger: "Danger nearby",
     noHazard: "No hazards nearby",
-    fireNear: "Fire nearby",
-    fireFar: "Fire in region",
-    quakeNear: "Earthquake nearby",
-    quakeFar: "Earthquake in region",
-    temp: "Temperature",
-    decision: "Decision Analysis",
-    avoid: "Avoid travel",
-    caution: "Travel with caution",
+    fireNear: "Fire nearby", fireFar: "Fire in region",
+    quakeNear: "Earthquake nearby", quakeFar: "Earthquake in region",
+    temp: "Temperature", decision: "Decision Analysis",
+    avoid: "Avoid travel", caution: "Travel with caution", ok: "Travel is safe"
   },
-
   fr: {
-  me: "Moi",
-  refresh: "Actualiser",
-  risk: "Risque",
-  geoError: "Échec de la géolocalisation",
- loading: "Chargement...",
-  extremeHeat: "Chaleur extrême",
-extremeCold: "Froid extrême",
-    km: "km",
-  highRisk: "Risque élevé",
-moderateRisk: "Risque modéré",
-lowRisk: "Faible risque",
-pickSafer: "Choisissez une station plus sûre",
-betterOptions: "Options beaucoup plus sûres disponibles",
-changePlans: "Changement de plan requis",
-monitor: "Surveillez la situation",
-tripPossible: "Le voyage reste possible",
-unstable: "La situation peut évoluer",
-goodConditions: "Bonnes conditions",
-distanceNote: "Le risque est basé uniquement sur la distance",
-  youAreHere: "Vous êtes ici",
-    safe: "Sûr",
-    warning: "Risque dans la région",
-    danger: "Danger à proximité",
+    me: "Moi", refresh: "Actualiser", risk: "Risque",
+    geoError: "Échec de la géolocalisation", loading: "Chargement...",
+    loadingData: "Chargement des données…",
+    extremeHeat: "Chaleur extrême", extremeCold: "Froid extrême", km: "km",
+    highRisk: "Risque élevé", moderateRisk: "Risque modéré", lowRisk: "Faible risque",
+    pickSafer: "Choisissez une station plus sûre",
+    betterOptions: "Options beaucoup plus sûres disponibles",
+    changePlans: "Changement de plan requis", monitor: "Surveillez la situation",
+    tripPossible: "Le voyage reste possible", unstable: "La situation peut évoluer",
+    goodConditions: "Bonnes conditions",
+    distanceNote: "Le risque est basé uniquement sur la distance",
+    youAreHere: "Vous êtes ici",
+    safe: "Sûr", warning: "Risque dans la région", danger: "Danger à proximité",
     noHazard: "Aucun danger",
-    fireNear: "Incendie proche",
-    fireFar: "Incendie dans la région",
-    quakeNear: "Séisme proche",
-    quakeFar: "Séisme dans la région",
-    temp: "Température",
-   decision: "Analyse du risque" ,
-    avoid: "Évitez de voyager",
-    caution: "Voyagez avec prudence",
-    ok: "Voyage sûr"
+    fireNear: "Incendie proche", fireFar: "Incendie dans la région",
+    quakeNear: "Séisme proche", quakeFar: "Séisme dans la région",
+    temp: "Température", decision: "Analyse du risque",
+    avoid: "Évitez de voyager", caution: "Voyagez avec prudence", ok: "Voyage sûr"
   },
-
   zh: {
-   me: "我",
-  refresh: "刷新",
-  risk: "风险",
-  geoError: "定位失败",
-loading: "加载中...",
-  extremeHeat: "极端高温",
-extremeCold: "极端低温",
-    km: "km",
-  highRisk: "高风险",
-moderateRisk: "中等风险",
-lowRisk: "低风险",
-pickSafer: "选择更安全的度假地",
-betterOptions: "有更安全的选择",
-changePlans: "需要改变计划",
-monitor: "关注情况",
-tripPossible: "可以出行",
-unstable: "情况可能变化",
-goodConditions: "良好条件",
-distanceNote: "风险仅基于距离",
-  youAreHere: "你在这里",
-    safe: "安全",
-    warning: "区域风险",
-    danger: "附近危险",
+    me: "我", refresh: "刷新", risk: "风险",
+    geoError: "定位失败", loading: "加载中...",
+    loadingData: "正在加载数据…",
+    extremeHeat: "极端高温", extremeCold: "极端低温", km: "km",
+    highRisk: "高风险", moderateRisk: "中等风险", lowRisk: "低风险",
+    pickSafer: "选择更安全的度假地", betterOptions: "有更安全的选择",
+    changePlans: "需要改变计划", monitor: "关注情况",
+    tripPossible: "可以出行", unstable: "情况可能变化",
+    goodConditions: "良好条件", distanceNote: "风险仅基于距离",
+    youAreHere: "你在这里",
+    safe: "安全", warning: "区域风险", danger: "附近危险",
     noHazard: "附近无风险",
-    fireNear: "附近有火灾",
-    fireFar: "区域内有火灾",
-    quakeNear: "附近地震",
-    quakeFar: "区域内地震",
-    temp: "温度",
-    decision: "风险分析",
-    avoid: "不建议出行",
-    caution: "谨慎出行",
-    ok: "可以出行"
+    fireNear: "附近有火灾", fireFar: "区域内有火灾",
+    quakeNear: "附近地震", quakeFar: "区域内地震",
+    temp: "温度", decision: "风险分析",
+    avoid: "不建议出行", caution: "谨慎出行", ok: "可以出行"
   }
 };
+
 function t(key) {
   return translations[currentLang][key] || key;
 }
 
 function setLanguage(lang) {
   currentLang = lang;
-
-  console.log("Language switched to:", lang);
-
+  updateUI();
   updateLegend();
-  updateResortColors(); // 👈 внутри функции
-  updateUI(); //
+  updateResortColors();
 }
+
 function updateUI() {
-  document.getElementById("btnMe").innerText = t("me");
+  document.getElementById("btnMe").innerText      = t("me");
   document.getElementById("btnRefresh").innerText = t("refresh");
 }
 
 function updateLegend() {
-  const legend = document.getElementById("legend");
-
-  legend.innerHTML = `
+  document.getElementById("legend").innerHTML = `
     <div><span style="color:green;">●</span> ${t("safe")}</div>
     <div><span style="color:orange;">●</span> ${t("warning")}</div>
     <div><span style="color:red;">●</span> ${t("danger")}</div>
@@ -597,877 +362,729 @@ function updateLegend() {
 }
 
 
-let resortCluster = L.markerClusterGroup({
+// ================================================================
+//  SECTION 2 — DATA LAYER
+//  State, loaders, weather cache, findNearestHazards
+// ================================================================
 
-  disableClusteringAtZoom: 7,
+// --- Global state ---
+let riskConfig   = null;
+let firesData    = [];   // [{ lat, lon }]
+let quakesData   = [];   // [{ lat, lon, mag }]
+let resorts      = [];   // loaded from resorts.json
+let countries    = [];   // loaded from countries.json
 
-  // 🔥 поведение кластеров
-  spiderfyOnMaxZoom: true,
-  showCoverageOnHover: false,
-  zoomToBoundsOnClick: true,
+// Readiness flag — prevents race-condition clicks before data arrives
+let dataReady = false;
 
-  // 🔴 цветные кластеры по риску
-  iconCreateFunction: function(cluster) {
+// --- Weather cache: key = "lat2:lon2", value = temperature number ---
+const weatherCache = new Map();
 
-    let markers = cluster.getAllChildMarkers();
+/**
+ * Fetch current temperature. Rounds lat/lon to 2 decimal places
+ * so nearby markers reuse the same cached result.
+ */
+async function getWeather(lat, lon) {
+  const key = `${lat.toFixed(2)}:${lon.toFixed(2)}`;
+  if (weatherCache.has(key)) return weatherCache.get(key);
 
-    let hasDanger = false;
-    let hasWarning = false;
-
-    markers.forEach(m => {
-      if (m.riskLevel === "danger") hasDanger = true;
-      if (m.riskLevel === "warning") hasWarning = true;
-    });
-
-    let color = "green";
-
-    if (hasDanger) color = "red";
-    else if (hasWarning) color = "orange";
-
-    return L.divIcon({
-     html: `<div style="
-  background:${color};
-  color:white;
-  border-radius:50%;
-  width:44px;
-  height:44px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
-  font-size:14px;
-  border:3px solid white;
-  box-shadow:0 0 8px rgba(0,0,0,0.3);
-">
-  ${cluster.getChildCount()}
-</div>`,
-className: "custom-cluster",
-iconSize: L.point(44, 44)
-    });
+  try {
+    const url  = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    const temp = data.current.temperature_2m;
+    weatherCache.set(key, temp);
+    return temp;
+  } catch (err) {
+    console.warn("Weather fetch failed:", err);
+    return null; // caller must handle null gracefully
   }
+}
 
-});
+/**
+ * Load risk configuration from server.
+ * Falls back to safe defaults so the app never fully breaks.
+ */
+async function loadRiskConfig() {
+  try {
+    const res  = await fetch("riskConfig.json");
+    riskConfig = await res.json();
+    console.log("Risk config loaded");
+  } catch (err) {
+    console.error("riskConfig.json load failed, using defaults:", err);
+    // Fallback defaults — app remains functional
+    riskConfig = {
+      thresholds: { danger: 12, warning: 5 },
+      weights:    { tempHigh: 3, tempLow: 2, fireNear: 3, fireFar: 1, quakeNear: 3, quakeFar: 1 }
+    };
+  }
+}
 
-map.addLayer(resortCluster);
+/**
+ * Load and parse fire CSV from /fires endpoint.
+ * Returns parsed fire point array; adds visible markers near resorts.
+ */
+async function loadFires() {
+  try {
+    const res  = await fetch("/fires");
+    const text = await res.text();
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap &copy; CARTO',
-  subdomains: 'abcd',
-  maxZoom: 19
-}).addTo(map);
+    firesData = [];
+    fireLayer.clearLayers();
 
-// === ICONS ===
-let greenIcon = new L.Icon({
-  iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-  iconSize: [32, 32]
-});
+    let lines = text.split(/\r?\n/);
+    if (lines.length < 10) lines = text.split(" D ");
 
-let yellowIcon = new L.Icon({
-  iconUrl: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
-  iconSize: [32, 32]
-});
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
 
-let redIcon = new L.Icon({
-  iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-  iconSize: [32, 32]
-});
+      const c   = line.split(",");
+      if (c.length < 2) continue;
 
-// === USER ===
-let userMarker;
+      const lat = parseFloat(c[0]);
+      const lon = parseFloat(c[1]);
+      if (isNaN(lat) || isNaN(lon)) continue;
 
-function locateUser() {
+      firesData.push({ lat, lon });
 
-  navigator.geolocation.getCurrentPosition(
-
-    pos => {
-
-      let lat = pos.coords.latitude;
-      let lon = pos.coords.longitude;
-
-      map.flyTo([lat, lon], 16);
-
-      let fireNear = null;
-      let fireFar = null;
-
-      firesData.forEach(f => {
-        let d = getDistance(lat, lon, f.lat, f.lon);
-
-        if (d <= 25) {
-          if (fireNear === null || d < fireNear) fireNear = d;
-        } else if (d <= 80) {
-          if (fireFar === null || d < fireFar) fireFar = d;
-        }
-      });
-
-      let quakeNear = null;
-      let quakeFar = null;
-
-      quakesData.forEach(q => {
-        let d = getDistance(lat, lon, q.lat, q.lon);
-
-        if (d <= 30) {
-          if (quakeNear === null || d < quakeNear) quakeNear = d;
-        } else if (d <= 100) {
-          if (quakeFar === null || d < quakeFar) quakeFar = d;
-        }
-      });
-
-     let text = `<b>📍 ${t("youAreHere")}</b><br>`;
-
-      if (!fireNear && !fireFar && !quakeNear && !quakeFar) {
-        text += `🟢 ${t("noHazard")}`;
-      } else {
-
-       if (fireNear !== null)
-  text += `🔥 ${t("fireNear")} (~${Math.round(fireNear)} ${t("km")})<br>`;
-        else if (fireFar !== null)
-         text += `⚠️ ${t("fireFar")} (~${Math.round(fireFar)} ${t("km")})<br>`;
-
-        if (quakeNear !== null)
-          text += `🌍 ${t("quakeNear")} (~${Math.round(quakeNear)} ${t("km")})<br>`;
-        else if (quakeFar !== null)
-          text += `⚠️ ${t("quakeFar")} (~${Math.round(quakeFar)} ${t("km")})<br>`;
+      // Only render circle markers that are close to a known resort
+      if (isNearAnyResort(lat, lon, 80)) {
+        L.circleMarker([lat, lon], { radius: 3, color: "red" }).addTo(fireLayer);
       }
-
-      L.marker([lat, lon])
-        .addTo(map)
-        .bindPopup(text)
-        .openPopup();
-
-    },
-
-    () => {
-      alert(t("geoError"));
-    },
-
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
     }
 
-  );
+    console.log("🔥 Fires loaded:", firesData.length);
+  } catch (err) {
+    console.error("Fire load error:", err);
+    // firesData stays [] — map shows green (no risk), which is the safe fallback
+  }
 }
 
+/**
+ * Load earthquake GeoJSON from USGS.
+ * Filters to mag ≥ 3.5; adds markers near resorts.
+ */
+async function loadQuakes() {
+  try {
+    const res  = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
+    const data = await res.json();
 
-// === RESORTS ===
-let resorts = [];
-let resortMarkers = [];
+    quakesData = [];
 
-fetch("resorts.json?v=" + Date.now())
-  .then(res => res.json())
-  .then(data => {
-  window.currentCountryCases = data.cases;
-  // удаляем дубли по имени
-const unique = [];
-const seen = new Set();
+    for (const q of data.features) {
+      const mag = q.properties.mag;
+      if (!mag || mag < 3.5) continue;
 
-data.forEach(r => {
-  const key = r.name.toLowerCase().trim();
+      const [lon, lat] = q.geometry.coordinates;
+      quakesData.push({ lat, lon, mag });
 
-  if (!seen.has(key)) {
-    seen.add(key);
-    unique.push(r);
+      if (!isNearAnyResort(lat, lon, 100)) continue;
+
+      L.circleMarker([lat, lon], {
+        radius:      mag >= 5.5 ? 10 : mag >= 4.5 ? 8 : 6,
+        color:       mag >= 5.5 ? "red" : mag >= 4.5 ? "orange" : "yellow",
+        fillOpacity: 0.8
+      })
+      .bindPopup("🌍 Magnitude " + mag)
+      .addTo(quakeLayer);
+    }
+
+    console.log("Quakes loaded:", quakesData.length);
+  } catch (err) {
+    console.error("Quake load error:", err);
+    // quakesData stays [] — safe fallback
   }
-});
-
-data = unique;
-
-    resorts = data;
-
-    data.forEach(r => {
-
-      if (r.lat == null || r.lon == null) return;
-	  let m = L.marker([r.lat, r.lon], { icon: greenIcon });
-
-m.bindPopup(t("loading"));
-
-m.on("click", async () => {
-
-  // 🔥 FIRES
-let fireNear = null;
-let fireFar = null;
-
-firesData.forEach(f => {
-  let d = getDistance(r.lat, r.lon, f.lat, f.lon);
-
-  if (d <= 25) {
-    if (fireNear === null || d < fireNear) fireNear = d;
-  } else if (d <= 80) {
-    if (fireFar === null || d < fireFar) fireFar = d;
-  }
-});
-
-// 🌍 QUAKES
-let quakeNear = null;
-let quakeFar = null;
-
-quakesData.forEach(q => {
-  let d = getDistance(r.lat, r.lon, q.lat, q.lon);
-
-  if (d <= 30) {
-    if (quakeNear === null || d < quakeNear) quakeNear = d;
-  } else if (d <= 100) {
-    if (quakeFar === null || d < quakeFar) quakeFar = d;
-  }
-});
-
-  // 🌡️ TEMP
-  let temp = await getWeather(r.lat, r.lon);
-
-// 📊 BUILD POPUP
-let text = `<b>${r.name}</b><br>`;
-text += `🌡️ ${t("temp")}: ${temp} °C<br>`;
-
-// 🔥 FIRE INFO
-if (fireNear !== null) {
-  text += `🔥 Fire: ${Math.round(fireNear)} km<br>`;
-} else if (fireFar !== null) {
-  text += `🔥 Fire in region: ${Math.round(fireFar)} km<br>`;
-} else {
-  text += `🟢 No fires nearby<br>`;
 }
 
-// 🌍 QUAKE INFO
-if (quakeNear !== null) {
-  text += `🌍 Quake: ${Math.round(quakeNear)} km<br>`;
-} else if (quakeFar !== null) {
-  text += `🌍 Quake in region: ${Math.round(quakeFar)} km<br>`;
-} else {
-  text += `🟢 No earthquakes nearby<br>`;
-}
-
-// 🦠 EPIDEMIC (СНАЧАЛА!)
-if (window.currentCountryCases) {
-
-  let level = "LOW";
-
-  if (window.currentCountryCases > 20000000) level = "HIGH";
-  else if (window.currentCountryCases > 5000000) level = "MEDIUM";
-
-  text += `🦠 Epidemic: ${level}<br>`;
-}
-
-
-// ✅ ЕДИНАЯ СИСТЕМА РИСКА (ПОСЛЕ!)
-let risk = getFullRisk(r, temp);
-
-// 🎯 СПИДОМЕТР
-let gauge = createGauge(risk.score, risk.level);
-
-text += `<hr>`;
-text += gauge;
-
-// 🔥 ПРОГРЕСС-БАР
-text += `<hr>`;
-text += `🧠 <b>${t("decision")}</b><br>`;
-text += `${risk.decision.decision}<br>`;
-text += `${risk.decision.details}<br><br>`;
-text += risk.decision.advice;
-
-text += `<br><small style="color:gray;">
-⚠️ ${t("distanceNote")}
-</small>`;
-
-  m.setPopupContent(text);
-  m.openPopup();
-
-}); // ✅ закрыли m.on("click")
-
-resortCluster.addLayer(m);
-resortMarkers.push(m);
-
-}); // ✅ закрыли data.forEach
-
-console.log("Resorts loaded:", resorts.length);
-
-}); // 🔥 ОБЯЗАТЕЛЬНО закрыли .then
-
-
-// === SEARCH ===
-const searchInput = document.getElementById("search");
-const suggestionsBox = document.getElementById("suggestions");
-
-// === COUNTRIES ===
-let countries = [];
-
-fetch("countries.json?v=" + Date.now())
-  .then(res => res.json())
-  .then(data => {
-    countries = data;
-    console.log("Countries loaded:", countries.length);
-  });
-
-searchInput.addEventListener("input", () => {
-    let v = searchInput.value.toLowerCase();
-    suggestionsBox.innerHTML = "";
-
-    if (!v) return;
-
-    let results = resorts
-        .filter(r => 
-            r.name &&
-            r.name.toLowerCase().split(" ").some(word => word.startsWith(v))
-        )
-        .slice(0, 5);
-
-    results.forEach(r => {
-        let div = document.createElement("div");
-        div.className = "suggestion";
-        div.textContent = r.name;
-
-        div.onclick = () => {
-            searchInput.value = r.name;
-            suggestionsBox.innerHTML = "";
-
-            let marker = resortMarkers.find((m, i) => {
-                return resorts[i].name === r.name;
-            });
-
-            if (!marker) return;
-
-            resortCluster.zoomToShowLayer(marker, () => {
-                map.setView(marker.getLatLng(), 12);
-                marker.fire("click");
-                marker.setZIndexOffset(1000);
-
-                setTimeout(() => {
-                    marker.setZIndexOffset(0);
-                }, 2000);
-            });
-        };
-
-        suggestionsBox.appendChild(div);
-    });
-	});
-
-// === FIRES ===
-let fireLayer = L.layerGroup();
-let firesLoaded = false;
-let firesData = [];
-
-function toggleFires(on) {
-
-  if (!on) {
-    map.removeLayer(fireLayer);
-    firesData = [];
-    firesLoaded = false;
-    updateResortColors();
-    return;
+/**
+ * Quick check: is point (lat, lon) within `radiusKm` of ANY resort?
+ * Uses bbox pre-filter — O(n) but with cheap early exits.
+ */
+function isNearAnyResort(lat, lon, radiusKm) {
+  // 1 degree ≈ 111 km — generous bbox
+  const deg = radiusKm / 111;
+  for (const r of resorts) {
+    if (Math.abs(lat - r.lat) > deg) continue;
+    if (Math.abs(lon - r.lon) > deg) continue;
+    if (getDistance(lat, lon, r.lat, r.lon) <= radiusKm) return true;
   }
-
-  map.addLayer(fireLayer);
-
-  if (firesLoaded) {
-    updateResortColors();
-    return;
-  }
-
- fetch("/fires")
-    .then(r => r.text())
-    .then(text => {
-
-      firesData = [];
-      fireLayer.clearLayers();
-
-      // 🔥 парсер
-      let lines = text.split(/\r?\n/);
-
-      if (lines.length < 10) {
-        lines = text.split(" D ");
-      }
-
-      for (let i = 1; i < lines.length; i++) {
-
-        let line = lines[i].trim();
-        if (!line) continue;
-
-        let c = line.split(",");
-
-        if (c.length < 2) continue;
-
-        let lat = parseFloat(c[0]);
-        let lon = parseFloat(c[1]);
-
-        if (isNaN(lat) || isNaN(lon)) continue;
-
-        firesData.push({ lat, lon });
-
-        // 🔥 только рядом с курортами
-        let nearResort = false;
-
-        for (let j = 0; j < resorts.length; j++) {
-          let r = resorts[j];
-
-          if (Math.abs(lat - r.lat) > 1) continue;
-          if (Math.abs(lon - r.lon) > 1) continue;
-
-          if (getDistance(lat, lon, r.lat, r.lon) <= 80) {
-            nearResort = true;
-            break;
-          }
-        }
-
-        if (!nearResort) continue;
-
-        L.circleMarker([lat, lon], {
-          radius: 3,
-          color: "red"
-        }).addTo(fireLayer);
-      }
-
-      firesLoaded = true;
-
-      console.log("🔥 Fires loaded:", firesData.length);
-
-      updateResortColors();
-
-    })
-    .catch(err => {
-      console.error("Fire load error:", err);
-    });
+  return false;
 }
 
-// === HAZARD LEVEL ===
-function getHazardLevel(r) {
-
+/**
+ * THE single authoritative hazard search function.
+ * Replaces all previous duplicated fire/quake loops.
+ *
+ * Uses:
+ *   - for...of with break for fireNear (exit as soon as we find danger)
+ *   - bbox pre-filter (Math.abs) to skip distant points cheaply
+ *   - separate pass for quakes (same pattern)
+ *
+ * @param {number} lat
+ * @param {number} lon
+ * @returns {{ fireNear: number|null, fireFar: number|null,
+ *             quakeNear: number|null, quakeFar: number|null }}
+ */
+function findNearestHazards(lat, lon) {
+  // --- Fires ---
   let fireNear = null;
-  let fireFar = null;
+  let fireFar  = null;
 
-  for (let i = 0; i < firesData.length; i++) {
-    let f = firesData[i];
+  for (const f of firesData) {
+    // Bbox: fire within ~80 km requires lat/lon diff < ~0.8°
+    if (Math.abs(f.lat - lat) > 0.8) continue;
+    if (Math.abs(f.lon - lon) > 0.8) continue;
 
-    // ⚡ быстрый фильтр
-    if (Math.abs(f.lat - r.lat) > 1) continue;
-    if (Math.abs(f.lon - r.lon) > 1) continue;
-
-    let d = getDistance(r.lat, r.lon, f.lat, f.lon);
+    const d = getDistance(lat, lon, f.lat, f.lon);
 
     if (d <= 25) {
+      // Found a "near" fire — record distance and stop immediately
       fireNear = d;
-      break; // 🔥 сразу выходим → быстрее
-    } else if (d <= 80) {
+      break;
+    }
+    if (d <= 80) {
       if (fireFar === null || d < fireFar) fireFar = d;
     }
   }
 
+  // --- Quakes ---
   let quakeNear = null;
-  let quakeFar = null;
+  let quakeFar  = null;
 
-  for (let i = 0; i < quakesData.length; i++) {
-    let q = quakesData[i];
+  for (const q of quakesData) {
+    if (Math.abs(q.lat - lat) > 1.0) continue;
+    if (Math.abs(q.lon - lon) > 1.0) continue;
 
-    // ⚡ быстрый фильтр
-    if (Math.abs(q.lat - r.lat) > 1) continue;
-    if (Math.abs(q.lon - r.lon) > 1) continue;
-
-    let d = getDistance(r.lat, r.lon, q.lat, q.lon);
+    const d = getDistance(lat, lon, q.lat, q.lon);
 
     if (d <= 30) {
       quakeNear = d;
       break;
-    } else if (d <= 100) {
+    }
+    if (d <= 100) {
       if (quakeFar === null || d < quakeFar) quakeFar = d;
     }
   }
 
-  if (fireNear !== null || quakeNear !== null) return "red";
-  if (fireFar !== null || quakeFar !== null) return "yellow";
-
-  return "green";
+  return { fireNear, fireFar, quakeNear, quakeFar };
 }
 
+
+// ================================================================
+//  SECTION 3 — RISK ENGINE
+//  Score calculation, decision text, full risk object
+// ================================================================
+
+/**
+ * Calculate numeric risk score from hazard distances + temperature.
+ * temp may be null (no weather data) — skipped cleanly.
+ */
 function calculateRiskScore({ temp, fireNear, fireFar, quakeNear, quakeFar }) {
   if (!riskConfig) return 0;
 
-  let score = 0;
-  const w = riskConfig.weights;
+  let score  = 0;
+  const w    = riskConfig.weights;
 
-  // 🌡️ температура
-  if (temp >= 35) score += w.tempHigh;
-  if (temp <= -10) score += w.tempLow;
-
-  // 🔥 пожары
-  if (fireNear !== null) {
-  score += (1 - fireNear / 25) * w.fireNear * 7;
-  } else if (fireFar !== null) {
-   score += (1 - fireFar / 80) * w.fireFar * 4;
+  if (temp !== null) {
+    if (temp >= 35) score += w.tempHigh;
+    if (temp <= -10) score += w.tempLow;
   }
 
-  // 🌍 землетрясения
-  if (quakeNear !== null) {
-   score += (1 - quakeNear / 30) * w.quakeNear * 6;
-  } else if (quakeFar !== null) {
-   score += (1 - quakeFar / 100) * w.quakeFar * 4;
-  }
+  if (fireNear !== null)      score += (1 - fireNear / 25)   * w.fireNear  * 7;
+  else if (fireFar !== null)  score += (1 - fireFar / 80)    * w.fireFar   * 4;
+
+  if (quakeNear !== null)     score += (1 - quakeNear / 30)  * w.quakeNear * 6;
+  else if (quakeFar !== null) score += (1 - quakeFar / 100)  * w.quakeFar  * 4;
 
   return score;
 }
-function getFullRisk(r, temp) {
 
-  let fireNear = null;
-  let fireFar = null;
+/**
+ * Map numeric score → { level, decision, details, advice }.
+ * level is "safe" | "warning" | "danger"
+ */
+function getRiskDecision(score) {
+  if (!riskConfig || !riskConfig.thresholds) {
+    return { level: "safe", decision: t("loading"), details: "", advice: "" };
+  }
 
-  firesData.forEach(f => {
-    let d = getDistance(r.lat, r.lon, f.lat, f.lon);
+  const { danger: dThr, warning: wThr } = riskConfig.thresholds;
 
-    if (d <= 25) {
-      if (fireNear === null || d < fireNear) fireNear = d;
-    } else if (d <= 80) {
-      if (fireFar === null || d < fireFar) fireFar = d;
-    }
-  });
+  if (score >= dThr) {
+    return {
+      level:    "danger",
+      decision: `🔴 ${t("avoid")}`,
+      details:  t("highRisk"),
+      advice:   `❌ ${t("changePlans")}<br>⚠️ ${t("unstable")}<br>🔥 ${t("pickSafer")}`
+    };
+  }
 
-  let quakeNear = null;
-  let quakeFar = null;
-
-  quakesData.forEach(q => {
-    let d = getDistance(r.lat, r.lon, q.lat, q.lon);
-
-    if (d <= 30) {
-      if (quakeNear === null || d < quakeNear) quakeNear = d;
-    } else if (d <= 100) {
-      if (quakeFar === null || d < quakeFar) quakeFar = d;
-    }
-  });
-
-  let score = calculateRiskScore({
-    temp,
-    fireNear,
-    fireFar,
-    quakeNear,
-    quakeFar
-  });
-
-  let decision = getRiskDecision(score, t);
-
-  // уровень для цвета
-  let level = "green";
-  if (decision.level === "danger") level = "red";
-  else if (decision.level === "warning") level = "yellow";
+  if (score >= wThr) {
+    return {
+      level:    "warning",
+      decision: `⚠️ ${t("caution")}`,
+      details:  t("moderateRisk"),
+      advice:   `⏳ ${t("monitor")}<br>+ ${t("tripPossible")}<br>- ${t("unstable")}`
+    };
+  }
 
   return {
-    score,
-    decision,
-    level
+    level:    "safe",
+    decision: `🟢 ${t("ok")}`,
+    details:  t("lowRisk"),
+    advice:   `✅ ${t("goodConditions")}<br>+ ${t("lowRisk")}`
   };
 }
 
-// === UPDATE COLORS ===
+/**
+ * Compute full risk object for a resort + temperature.
+ * Uses findNearestHazards — single source of truth.
+ *
+ * @param {{ lat: number, lon: number }} r
+ * @param {number|null} temp
+ * @returns {{ score, decision, level: "green"|"yellow"|"red", hazards }}
+ */
+function getFullRisk(r, temp) {
+  const hazards  = findNearestHazards(r.lat, r.lon);
+  const score    = calculateRiskScore({ temp, ...hazards });
+  const decision = getRiskDecision(score);
+
+  const level = decision.level === "danger"  ? "red"
+              : decision.level === "warning" ? "yellow"
+              : "green";
+
+  return { score, decision, level, hazards };
+}
+
+/**
+ * Build the speedometer gauge HTML.
+ */
+function createGauge(score, markerLevel) {
+  const max     = 20;
+  const percent = Math.min(score / max, 1);
+  const deg     = percent * 180;
+  const color   = markerLevel === "red" ? "red" : markerLevel === "yellow" ? "orange" : "green";
+
+  return `
+    <div style="width:120px;margin:auto;text-align:center;">
+      <div style="
+        width:120px; height:60px;
+        border-top-left-radius:120px; border-top-right-radius:120px;
+        background:#eee; position:relative; overflow:hidden;
+      ">
+        <div style="
+          position:absolute; bottom:0; left:0;
+          width:120px; height:60px; background:${color};
+          transform:rotate(${deg}deg); transform-origin:bottom center;
+        "></div>
+      </div>
+      <div style="margin-top:5px;font-weight:bold;">${t("risk")}: ${Math.round(percent * 100)}%</div>
+    </div>`;
+}
+
+
+// ================================================================
+//  SECTION 4 — MAP & UI
+//  Leaflet setup, icons, cluster, marker coloring
+// ================================================================
+
+const map = L.map("map", { maxZoom: 18 }).setView([48.5, 32], 5);
+
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  attribution: "&copy; OpenStreetMap &copy; CARTO",
+  subdomains: "abcd",
+  maxZoom: 19
+}).addTo(map);
+
+// --- Icons ---
+const greenIcon  = new L.Icon({ iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",  iconSize: [32, 32] });
+const yellowIcon = new L.Icon({ iconUrl: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png", iconSize: [32, 32] });
+const redIcon    = new L.Icon({ iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",    iconSize: [32, 32] });
+
+// --- Layers ---
+const fireLayer  = L.layerGroup();
+const quakeLayer = L.layerGroup();
+
+// --- Cluster ---
+const resortCluster = L.markerClusterGroup({
+  disableClusteringAtZoom: 7,
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: false,
+  zoomToBoundsOnClick: true,
+  iconCreateFunction(cluster) {
+    const markers   = cluster.getAllChildMarkers();
+    const hasDanger = markers.some(m => m.riskLevel === "danger");
+    const hasWarn   = markers.some(m => m.riskLevel === "warning");
+    const color     = hasDanger ? "red" : hasWarn ? "orange" : "green";
+    return L.divIcon({
+      html: `<div style="
+        background:${color}; color:white; border-radius:50%;
+        width:44px; height:44px; display:flex; align-items:center;
+        justify-content:center; font-weight:bold; font-size:14px;
+        border:3px solid white; box-shadow:0 0 8px rgba(0,0,0,0.3);
+      ">${cluster.getChildCount()}</div>`,
+      className: "custom-cluster",
+      iconSize: L.point(44, 44)
+    });
+  }
+});
+map.addLayer(resortCluster);
+
+// --- Marker registry: name → marker, for O(1) search lookup ---
+const resortMarkers      = [];  // parallel to resorts[]
+const resortMarkerByName = new Map();
+
+/**
+ * Colour every resort marker based on current hazard data.
+ * Does NOT use a hardcoded temperature — skips temp scoring
+ * at this stage (colours reflect only fire/quake proximity).
+ * Actual temperature is fetched lazily on marker click.
+ */
 function updateResortColors() {
+  for (let i = 0; i < resortMarkers.length; i++) {
+    const m     = resortMarkers[i];
+    const r     = resorts[i];
 
-  resortMarkers.forEach((m, i) => {
+    // Use findNearestHazards directly (no hardcoded temp=25)
+    const h     = findNearestHazards(r.lat, r.lon);
+    const score = calculateRiskScore({ temp: null, ...h });
+    const dec   = getRiskDecision(score);
 
-    let r = resorts[i];
-    let risk = getFullRisk(r, 25); // временно temp = 25
-let level = risk.level;
+    m.riskLevel = dec.level; // "safe" | "warning" | "danger"
 
-    // 🔥 ВАЖНО — СОХРАНЯЕМ уровень в маркер
-    m.riskLevel = level === "red" ? "danger" :
-                  level === "yellow" ? "warning" : "safe";
-
-    if (level === "red") {
-      m.setIcon(redIcon);
-    }
-    else if (level === "yellow") {
-      m.setIcon(yellowIcon);
-    }
-    else {
-      m.setIcon(greenIcon);
-    }
-
-  });
+    if (dec.level === "danger")       m.setIcon(redIcon);
+    else if (dec.level === "warning") m.setIcon(yellowIcon);
+    else                              m.setIcon(greenIcon);
+  }
 
   resortCluster.refreshClusters();
 }
 
+/**
+ * Toggle fire layer visibility.
+ * Fires are now loaded once in init() — toggle just shows/hides.
+ */
+function toggleFires(on) {
+  if (on) map.addLayer(fireLayer);
+  else    map.removeLayer(fireLayer);
+  updateResortColors();
+}
 
-
-// === QUAKES ===
-let quakeLayer = L.layerGroup();
-let quakesLoaded = false;
-let quakesData = [];
-
+/**
+ * Toggle quake layer visibility.
+ */
 function toggleQuakes(on) {
+  if (on) map.addLayer(quakeLayer);
+  else    map.removeLayer(quakeLayer);
+  updateResortColors();
+}
 
-  if (!on) {
-    map.removeLayer(quakeLayer);
-    updateResortColors();
-    return;
-  }
+/**
+ * Locate user, show popup with nearby hazards.
+ * Uses findNearestHazards — no duplicated loops.
+ */
+function locateUser() {
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      map.flyTo([lat, lon], 16);
 
-  map.addLayer(quakeLayer);
+      const { fireNear, fireFar, quakeNear, quakeFar } = findNearestHazards(lat, lon);
 
-  if (quakesLoaded) return;
+      let text = `<b>📍 ${t("youAreHere")}</b><br>`;
 
-  quakesData = [];
+      if (!fireNear && !fireFar && !quakeNear && !quakeFar) {
+        text += `🟢 ${t("noHazard")}`;
+      } else {
+        if (fireNear !== null)      text += `🔥 ${t("fireNear")} (~${Math.round(fireNear)} ${t("km")})<br>`;
+        else if (fireFar !== null)  text += `⚠️ ${t("fireFar")} (~${Math.round(fireFar)} ${t("km")})<br>`;
+        if (quakeNear !== null)     text += `🌍 ${t("quakeNear")} (~${Math.round(quakeNear)} ${t("km")})<br>`;
+        else if (quakeFar !== null) text += `⚠️ ${t("quakeFar")} (~${Math.round(quakeFar)} ${t("km")})<br>`;
+      }
 
-  fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson")
-    .then(r => r.json())
-    .then(data => {
+      L.marker([lat, lon]).addTo(map).bindPopup(text).openPopup();
+    },
+    () => { alert(t("geoError")); },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
 
-      data.features.forEach(q => {
+/**
+ * Build popup HTML for a resort on click.
+ * Fetches weather once (cached), then computes full risk.
+ */
+async function buildResortPopup(r) {
+  // Guard against clicking before data is ready
+  if (!dataReady) return `<b>${r.name}</b><br>⏳ ${t("loadingData")}`;
 
-        let mag = q.properties.mag;
-        if (!mag || mag < 3.5) return;
+  const temp = await getWeather(r.lat, r.lon); // may return null
+  const risk = getFullRisk(r, temp);
+  const { fireNear, fireFar, quakeNear, quakeFar } = risk.hazards;
 
-        let [lon, lat] = q.geometry.coordinates;
+  let text = `<b>${r.name}</b><br>`;
 
-        quakesData.push({ lat, lon, mag });
+  if (temp !== null) text += `🌡️ ${t("temp")}: ${temp} °C<br>`;
 
-        if (!resorts.some(r => getDistance(lat, lon, r.lat, r.lon) <= 100)) return;
+  if (fireNear !== null)      text += `🔥 Fire: ${Math.round(fireNear)} km<br>`;
+  else if (fireFar !== null)  text += `🔥 Fire in region: ${Math.round(fireFar)} km<br>`;
+  else                        text += `🟢 No fires nearby<br>`;
 
-        L.circleMarker([lat, lon], {
-          radius: mag >= 5.5 ? 10 : mag >= 4.5 ? 8 : 6,
-          color: mag >= 5.5 ? "red" : mag >= 4.5 ? "orange" : "yellow",
-          fillOpacity: 0.8
-        })
-        .bindPopup("🌍 Magnitude " + mag)
-        .addTo(quakeLayer);
+  if (quakeNear !== null)     text += `🌍 Quake: ${Math.round(quakeNear)} km<br>`;
+  else if (quakeFar !== null) text += `🌍 Quake in region: ${Math.round(quakeFar)} km<br>`;
+  else                        text += `🟢 No earthquakes nearby<br>`;
 
+  text += `<hr>${createGauge(risk.score, risk.level)}<hr>`;
+  text += `🧠 <b>${t("decision")}</b><br>`;
+  text += `${risk.decision.decision}<br>`;
+  text += `${risk.decision.details}<br><br>`;
+  text += risk.decision.advice;
+  text += `<br><small style="color:gray;">⚠️ ${t("distanceNote")}</small>`;
+
+  return text;
+}
+
+/**
+ * Haversine distance in km.
+ */
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function refreshMap() { location.reload(); }
+
+
+// ================================================================
+//  SECTION 5 — RESORTS & SEARCH
+// ================================================================
+
+async function loadResorts() {
+  try {
+    const res  = await fetch("resorts.json?v=" + Date.now());
+    const data = await res.json();
+
+    // Deduplicate by lowercase name
+    const seen        = new Set();
+    const uniqueData  = [];
+    for (const r of data) {
+      const key = r.name.toLowerCase().trim();
+      if (!seen.has(key)) { seen.add(key); uniqueData.push(r); }
+    }
+
+    resorts.push(...uniqueData); // fill global array
+
+    for (const r of uniqueData) {
+      if (r.lat == null || r.lon == null) continue;
+
+      const m = L.marker([r.lat, r.lon], { icon: greenIcon });
+      m.riskLevel = "safe";
+      m.bindPopup(t("loading"));
+
+      m.on("click", async () => {
+        // Show spinner immediately, then populate
+        m.setPopupContent(`<b>${r.name}</b><br>⏳ ${t("loading")}`);
+        m.openPopup();
+
+        const html = await buildResortPopup(r);
+        m.setPopupContent(html);
+        m.openPopup();
       });
 
-      quakesLoaded = true;
-      console.log("Quakes loaded:", quakesData.length);
+      resortCluster.addLayer(m);
+      resortMarkers.push(m);
+      resortMarkerByName.set(r.name, m);
+    }
 
-      updateResortColors();
-
-    })
-    .catch(err => {
-      console.error("Quake load error:", err);
-    });
+    console.log("Resorts loaded:", resorts.length);
+  } catch (err) {
+    console.error("Resorts load error:", err);
+  }
 }
 
-
-// === DISTANCE ===
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLon = (lon2-lon1)*Math.PI/180;
-
-  const a =
-    Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180) *
-    Math.cos(lat2*Math.PI/180) *
-    Math.sin(dLon/2)**2;
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-function createProgress(score) {
-  let max = 25;
-  let percent = Math.min(score / max * 100, 100);
-
-  let color = "green";
-  if (percent > 60) color = "red";
-  else if (percent > 30) color = "orange";
-
-  return `
-    <div style="background:#eee;border-radius:6px;overflow:hidden;">
-      <div style="
-        width:${percent}%;
-        background:${color};
-        padding:4px;
-        color:white;
-        font-size:12px;
-        text-align:center;
-      ">
-        ${Math.round(percent)}%
-      </div>
-    </div>
-  `;
-}
-function createGauge(score, markerLevel) {
-
-  let max = 20;
-  let percent = Math.min(score / max, 1);
-  let deg = percent * 180;
-
-  let color = "green";
-  if (markerLevel === "red") color = "red";
-  else if (markerLevel === "yellow") color = "orange";
-
-  return `
-  <div style="width:120px;margin:auto;text-align:center;">
-    <div style="
-      width:120px;
-      height:60px;
-      border-top-left-radius:120px;
-      border-top-right-radius:120px;
-      background:#eee;
-      position:relative;
-      overflow:hidden;
-    ">
-      <div style="
-        position:absolute;
-        bottom:0;
-        left:0;
-        width:120px;
-        height:60px;
-        background:${color};
-        transform:rotate(${deg}deg);
-        transform-origin:bottom center;
-      "></div>
-    </div>
-    <div style="margin-top:5px;font-weight:bold;">
-      ${t("risk")}: ${Math.round(percent*100)}%
-    </div>
-  </div>
-  `;
+async function loadCountries() {
+  try {
+    const res  = await fetch("countries.json?v=" + Date.now());
+    countries  = await res.json();
+    console.log("Countries loaded:", countries.length);
+  } catch (err) {
+    console.error("Countries load error:", err);
+  }
 }
 
-// 👇 ВНЕ функции!
-async function getWeather(lat, lon) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m`;
+// --- Search autocomplete ---
+const searchInput    = document.getElementById("search");
+const suggestionsBox = document.getElementById("suggestions");
 
-  let res = await fetch(url);
-  let data = await res.json();
-
-  return data.current.temperature_2m;
-}
-
-// 👇 ВНЕ функции!
-function getWeatherRisk(temp) {
- if (temp >= 38) return t("extremeHeat");
-if (temp <= -10) return t("extremeCold");
-  return null;
-}
-
-function refreshMap() {
-  location.reload();
-}
-// === AUTO REFRESH ===
-function autoRefreshData() {
-
-  console.log("Auto refresh...");
-
-  firesLoaded = false;
-  quakesLoaded = false;
-
-  fireLayer.clearLayers();
-  quakeLayer.clearLayers();
-
-  toggleFires(true);
-}
-
-async function loadRiskConfig() {
-  let res = await fetch("riskConfig.json");
-  riskConfig = await res.json();
-
-  console.log("Risk config loaded from JSON");
-}
-
-async function init() {
-  await loadRiskConfig();
-
-  toggleFires(true);
-  toggleQuakes(true);
-
-  updateUI();
-  updateLegend();
-  updateResortColors(); 
-}
-
-// запуск
-init();
-
-// автообновление
-setInterval(autoRefreshData, 3 * 60 * 60 * 1000);
-
-const panel = document.getElementById("epidemicsPanel");
-const btn = document.getElementById("epidemicsBtn");
-const closeBtn = document.getElementById("closePanel");
-
-btn.onclick = () => panel.classList.add("open");
-closeBtn.onclick = () => panel.classList.remove("open");
-
-const input = document.getElementById("countryInput");
-const result = document.getElementById("epidemicResult");
-
-input.addEventListener("input", () => {
-
-  let v = input.value.toLowerCase();
-  result.innerHTML = "";
-
+searchInput.addEventListener("input", () => {
+  const v = searchInput.value.toLowerCase();
+  suggestionsBox.innerHTML = "";
   if (!v) return;
 
-  let matches = countries
-  .sort((a, b) => {
-    let aStarts = a.name.toLowerCase().startsWith(v);
-    let bStarts = b.name.toLowerCase().startsWith(v);
+  const results = resorts
+    .filter(r => r.name && r.name.toLowerCase().split(" ").some(w => w.startsWith(v)))
+    .slice(0, 5);
 
-    if (aStarts && !bStarts) return -1;
-    if (!aStarts && bStarts) return 1;
+  for (const r of results) {
+    const div       = document.createElement("div");
+    div.className   = "suggestion";
+    div.textContent = r.name;
 
-    return a.name.localeCompare(b.name);
-  })
-  .filter(c => c.name.toLowerCase().includes(v))
-  .slice(0, 5);
+    div.onclick = () => {
+      searchInput.value    = r.name;
+      suggestionsBox.innerHTML = "";
 
-  matches.forEach(c => {
+      const marker = resortMarkerByName.get(r.name);
+      if (!marker) return;
 
-    let div = document.createElement("div");
-    div.className = "suggestion";
+      resortCluster.zoomToShowLayer(marker, () => {
+        map.setView(marker.getLatLng(), 12);
+        marker.fire("click");
+        marker.setZIndexOffset(1000);
+        setTimeout(() => { marker.setZIndexOffset(0); }, 2000);
+      });
+    };
+
+    suggestionsBox.appendChild(div);
+  }
+});
+
+
+// ================================================================
+//  SECTION 6 — PANELS
+// ================================================================
+
+/**
+ * Generic panel toggle: open one, optionally close others.
+ * Driven by data-closes attributes on close buttons.
+ */
+document.querySelectorAll(".panel-close").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const id = btn.dataset.closes;
+    if (id) document.getElementById(id).classList.remove("open");
+  });
+});
+
+function openPanel(id) {
+  document.getElementById(id).classList.add("open");
+}
+
+document.getElementById("btnInfo").onclick     = () => openPanel("infoPanel");
+document.getElementById("btnNotify").onclick   = () => openPanel("notifyPanel");
+document.getElementById("btnEpidemics").onclick = () => openPanel("epidemicsPanel");
+document.getElementById("btnSettings").onclick  = () => openPanel("settingsPanel");
+
+// --- Epidemics country search ---
+const countryInput   = document.getElementById("countryInput");
+const epidemicResult = document.getElementById("epidemicResult");
+
+countryInput.addEventListener("input", () => {
+  const v = countryInput.value.toLowerCase();
+  epidemicResult.innerHTML = "";
+  if (!v) return;
+
+  const matches = [...countries]
+    .filter(c => c.name.toLowerCase().includes(v))
+    .sort((a, b) => {
+      const aS = a.name.toLowerCase().startsWith(v);
+      const bS = b.name.toLowerCase().startsWith(v);
+      if (aS && !bS) return -1;
+      if (!aS && bS) return 1;
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 5);
+
+  for (const c of matches) {
+    const div       = document.createElement("div");
+    div.className   = "suggestion";
     div.textContent = c.name;
 
     div.onclick = () => {
-  input.value = c.name;
+      countryInput.value       = c.name;
+      epidemicResult.innerHTML = "Loading...";
+      map.setView([c.lat, c.lon], 5);
 
-  result.innerHTML = "Loading...";
+      fetch("https://disease.sh/v3/covid-19/countries/" + encodeURIComponent(c.name))
+        .then(r => r.json())
+        .then(data => {
+          const color = data.cases > 20000000 ? "red" : data.cases > 5000000 ? "orange" : "green";
+          epidemicResult.innerHTML = `
+            <b style="color:${color}; font-size:16px;">${data.country}</b><br>
+            🦠 Cases: ${data.cases.toLocaleString()}<br>
+            💀 Deaths: ${data.deaths.toLocaleString()}<br>
+            💚 Recovered: ${data.recovered.toLocaleString()}
+          `;
+        })
+        .catch(() => { epidemicResult.innerHTML = "No data"; });
+    };
 
-  fetch("https://disease.sh/v3/covid-19/countries/" + c.name)
-    .then(res => res.json())
-    .then(data => {
-
-     let color = "green";
-
-if (data.cases > 20000000) color = "red";
-else if (data.cases > 5000000) color = "orange";
-
-result.innerHTML = `
-  <b style="color:${color}; font-size:16px;">
-    ${data.country}
-  </b><br>
-
-  🦠 Cases: ${data.cases.toLocaleString()}<br>
-  💀 Deaths: ${data.deaths.toLocaleString()}<br>
-  💚 Recovered: ${data.recovered.toLocaleString()}
-`;
-
-    })
-    .catch(() => {
-      result.innerHTML = "No data";
-    });
-
-  map.setView([c.lat, c.lon], 5);
-};
-
-    result.appendChild(div);
-
-  });
-
+    epidemicResult.appendChild(div);
+  }
 });
-// === INFO PANEL ===
-const infoBtn = document.querySelectorAll('.side-btn')[0];
-const infoPanel = document.getElementById("infoPanel");
-const closeInfo = document.getElementById("closeInfo");
 
-const settingsBtn = document.querySelectorAll('.side-btn')[3];
-const settingsPanel = document.getElementById("settingsPanel");
-const closeSettings = document.getElementById("closeSettings");
 
-settingsBtn.onclick = () => settingsPanel.classList.add("open");
-closeSettings.onclick = () => settingsPanel.classList.remove("open");
+// ================================================================
+//  SECTION 7 — INIT & AUTO-REFRESH
+// ================================================================
 
-// === NOTIFY PANEL ===
-const notifyBtn = document.querySelectorAll('.side-btn')[1];
-const notifyPanel = document.getElementById("notifyPanel");
-const closeNotify = document.getElementById("closeNotify");
+/**
+ * Main init: load everything in parallel, then mark ready.
+ * Order matters: riskConfig must resolve before risk calculations,
+ * resorts must load before hazard proximity checks.
+ */
+async function init() {
+  await loadRiskConfig();
 
-notifyBtn.onclick = () => notifyPanel.classList.add("open");
-closeNotify.onclick = () => notifyPanel.classList.remove("open");
+  // Resorts and countries can load in parallel
+  await Promise.all([loadResorts(), loadCountries()]);
 
-infoBtn.onclick = () => infoPanel.classList.add("open");
-closeInfo.onclick = () => infoPanel.classList.remove("open");
+  // Fire and quake data can also load in parallel
+  await Promise.all([loadFires(), loadQuakes()]);
+
+  // Add layers to map
+  map.addLayer(fireLayer);
+  map.addLayer(quakeLayer);
+
+  // Now all data is present — colour markers accurately
+  updateResortColors();
+
+  // UI text
+  updateUI();
+  updateLegend();
+
+  // Signal that data is ready for click handlers
+  dataReady = true;
+  console.log("✅ All data loaded — map is ready");
+}
+
+/**
+ * Periodic background refresh (every 3 hours).
+ * Clears old data and reloads fires and quakes silently.
+ */
+async function autoRefreshData() {
+  console.log("Auto refresh...");
+  dataReady = false;
+
+  fireLayer.clearLayers();
+  quakeLayer.clearLayers();
+  firesData  = [];
+  quakesData = [];
+
+  await Promise.all([loadFires(), loadQuakes()]);
+  updateResortColors();
+  dataReady = true;
+}
+
+init();
+setInterval(autoRefreshData, 3 * 60 * 60 * 1000);
 
 </script>
 </body>

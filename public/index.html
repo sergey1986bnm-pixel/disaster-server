@@ -925,21 +925,29 @@ const searchInput    = document.getElementById("search");
 const suggestionsBox = document.getElementById("suggestions");
 
 searchInput.addEventListener("input", () => {
-  const v = searchInput.value.toLowerCase();
+  const v = searchInput.value.toLowerCase().trim();
   suggestionsBox.innerHTML = "";
+
   if (!v) return;
 
   const results = resorts
-    .filter(r => r.name && r.name.toLowerCase().split(" ").some(w => w.startsWith(v)))
+    .filter(r => r.name && r.name.toLowerCase().includes(v))
+    .sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(v);
+      const bStarts = b.name.toLowerCase().startsWith(v);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return a.name.localeCompare(b.name);
+    })
     .slice(0, 5);
 
   for (const r of results) {
-    const div       = document.createElement("div");
-    div.className   = "suggestion";
+    const div = document.createElement("div");
+    div.className = "suggestion";
     div.textContent = r.name;
 
     div.onclick = () => {
-      searchInput.value    = r.name;
+      searchInput.value = r.name;
       suggestionsBox.innerHTML = "";
 
       const marker = resortMarkerByName.get(r.name);
@@ -952,6 +960,10 @@ searchInput.addEventListener("input", () => {
         setTimeout(() => { marker.setZIndexOffset(0); }, 2000);
       });
     };
+
+    suggestionsBox.appendChild(div);
+  }
+});
 
     suggestionsBox.appendChild(div);
   }

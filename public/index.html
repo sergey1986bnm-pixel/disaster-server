@@ -272,7 +272,9 @@ html, body { margin: 0; height: 100%; }
 <script>
 "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
+// ================================================================
+//  DOM ELEMENTS (объявляем ОДИН раз)
+// ================================================================
 
 const searchInput = document.getElementById("search");
 const suggestionsBox = document.getElementById("suggestions");
@@ -289,22 +291,25 @@ const translations = {
   zh: { me: "我" }
 };
 
-// 👇 ДАЛЬШЕ ВСТАВЬ ВЕСЬ СВОЙ ОСТАЛЬНОЙ КОД БЕЗ ИЗМЕНЕНИЙ 👇
+// ================================================================
+//  ДАЛЬШЕ ИДЁТ ВЕСЬ ТВОЙ КОД БЕЗ ОБЁРТКИ
+// ================================================================
 
-// например:
 // function init() { ... }
-// loadResorts();
-// loadFires();
+// function loadResorts() { ... }
+// function loadFires() { ... }
+// function autoRefreshData() { ... }
 // и т.д.
 
 // ================================================================
-//  В КОНЦЕ ОБЯЗАТЕЛЬНО:
+//  ЗАПУСК (В САМОМ КОНЦЕ ФАЙЛА)
 // ================================================================
 
-init();
-setInterval(autoRefreshData, 3 * 60 * 60 * 1000);
-
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+  setInterval(autoRefreshData, 3 * 60 * 60 * 1000);
 });
+
 </script>
 
 // ================================================================
@@ -960,18 +965,32 @@ const suggestionsBox = document.getElementById("suggestions");
 
 searchInput.addEventListener("input", () => {
   const v = searchInput.value.toLowerCase().trim();
-  suggestionsBox.innerHTML = "";
 
-  if (!v) return;
+  // ✅ если пусто — чистим и выходим
+  if (!v) {
+    suggestionsBox.innerHTML = "";
+    return;
+  }
+
+  // ❗ защита: если resorts ещё не загрузились
+  if (!resorts || resorts.length === 0) {
+    suggestionsBox.innerHTML = "<div class='suggestion'>Loading...</div>";
+    return;
+  }
+
+  // чистим ТОЛЬКО после проверки
+  suggestionsBox.innerHTML = "";
 
   const results = resorts
     .filter(r => {
       if (!r || !r.name) return false;
+
       const name = r.name.toLowerCase();
 
       return (
-        name.startsWith(v) ||                     // Ibiza → i
-        name.split(" ").some(w => w.startsWith(v)) // Costa del Sol → sol
+        name.startsWith(v) ||
+        name.includes(v) || // ✅ добавили — ищет внутри слова
+        name.split(" ").some(w => w.startsWith(v))
       );
     })
     .sort((a, b) => {
@@ -994,6 +1013,12 @@ searchInput.addEventListener("input", () => {
     })
     .slice(0, 5);
 
+  // ✅ если вообще ничего не нашли
+  if (results.length === 0) {
+    suggestionsBox.innerHTML = "<div class='suggestion'>No results</div>";
+    return;
+  }
+
   results.forEach(r => {
     const div = document.createElement("div");
     div.className = "suggestion";
@@ -1009,6 +1034,7 @@ searchInput.addEventListener("input", () => {
       resortCluster.zoomToShowLayer(marker, () => {
         map.setView(marker.getLatLng(), 12);
         marker.fire("click");
+
         marker.setZIndexOffset(1000);
         setTimeout(() => marker.setZIndexOffset(0), 2000);
       });

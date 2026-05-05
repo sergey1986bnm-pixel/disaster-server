@@ -8,6 +8,11 @@ const app = express();
 
 app.use(cors());
 app.use(express.static("public"));
+app.use(express.static("public"));
+
+app.get("/api/test", (req, res) => {
+  res.json({ ok: true });
+});
 
 // ===============================
 // ✅ ТЕСТ (безопасный)

@@ -920,31 +920,41 @@ async function loadCountries() {
   }
 }
 
-// --- Search autocomplete ---
-const searchInput    = document.getElementById("search");
-const suggestionsBox = document.getElementById("suggestions");
-
 searchInput.addEventListener("input", () => {
   const v = searchInput.value.toLowerCase().trim();
   suggestionsBox.innerHTML = "";
 
   if (!v) return;
 
- const results = resorts
-  .filter(r =>
-    r &&
-    typeof r === "object" &&
-    typeof r.name === "string" &&
-    r.name.toLowerCase().includes(v)
-  )
-  .sort((a, b) => {
-    const aStarts = a.name.toLowerCase().startsWith(v);
-    const bStarts = b.name.toLowerCase().startsWith(v);
-    if (aStarts && !bStarts) return -1;
-    if (!aStarts && bStarts) return 1;
-    return a.name.localeCompare(b.name);
-  })
-  .slice(0, 5);
+  const results = resorts
+    .filter(r => {
+      if (!r || !r.name) return false;
+      const name = r.name.toLowerCase();
+
+      return (
+        name.startsWith(v) ||                     // Ibiza → i
+        name.split(" ").some(w => w.startsWith(v)) // Costa del Sol → sol
+      );
+    })
+    .sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+
+      const aExact = aName === v;
+      const bExact = bName === v;
+
+      const aStarts = aName.startsWith(v);
+      const bStarts = bName.startsWith(v);
+
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+
+      return aName.localeCompare(bName);
+    })
+    .slice(0, 5);
 
   results.forEach(r => {
     const div = document.createElement("div");

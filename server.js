@@ -1,4 +1,5 @@
 console.log("SERVER FILE LOADED ✅");
+
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -8,14 +9,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.static("public"));
-app.use(express.static("public"));
-
-app.get("/api/test", (req, res) => {
-  res.json({ ok: true });
-});
 
 // ===============================
-// ✅ ТЕСТ (безопасный)
+// ✅ TEST API
 // ===============================
 app.get("/api/test", (req, res) => {
   res.json({ ok: true });
@@ -42,7 +38,7 @@ app.get("/api/resorts", (req, res) => {
 });
 
 // ===============================
-// 🔥 FIRE PROXY (NASA)
+// 🔥 FIRE PROXY
 // ===============================
 app.get("/fires", async (req, res) => {
   try {
